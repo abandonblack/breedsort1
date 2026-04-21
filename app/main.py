@@ -15,7 +15,8 @@ from fastapi.templating import Jinja2Templates
 from PIL import Image
 from torchvision import transforms
 
-from app.model import build_model
+from app.model_resnet34 import build_model as build_resnet34
+from app.model_seresnet34 import build_model as build_seresnet34
 from app.train import DATASET_CATALOG
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -50,7 +51,8 @@ def load_model() -> None:
     IMAGE_SIZE = checkpoint.get("image_size", 224)
     ARCH = checkpoint.get("arch", "seresnet34")
 
-    model = build_model(num_classes=len(CLASS_NAMES)).to(DEVICE)
+    builder = build_seresnet34 if ARCH == "seresnet34" else build_resnet34
+    model = builder(num_classes=len(CLASS_NAMES)).to(DEVICE)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
     MODEL = model
