@@ -5,43 +5,58 @@
 - 图片上传并识别猫狗品种
 - 返回 Top3 候选与置信度
 - 用户反馈提交与展示
+- 对比 **SE-ResNet34** 与 **ResNet34（无注意力）**
 
-## 模型与数据集约束
+## 模型与数据集
 
-本项目当前使用：
-
-- **ResNet34-SE**（含 SE 通道注意力，不调用 `torchvision.models`）
-- **Oxford-IIIT Pet Dataset**（通过 `torchvision.datasets.OxfordIIITPet` 直接加载）
-
-你也可以通过接口查看数据集信息：`GET /api/datasets`。
+- **SE-ResNet34**（含 SE 通道注意力，不调用 `torchvision.models`）
+- **ResNet34**（无注意力机制）
+- **Oxford-IIIT Pet Dataset**（通过 `torchvision.datasets.OxfordIIITPet` 加载）
 
 ## 1. 安装依赖
 
 ```bash
-pip install -r requirements.txt
+pip install torch torchvision fastapi uvicorn pillow jinja2 python-multipart matplotlib
 ```
 
-## 2. 训练模型（自动下载 Oxford-IIIT）
+## 2. 分别训练两个网络
+
+### 2.1 训练 SE-ResNet34
 
 ```bash
-python -m app.train --data-dir data/oxford_iiit_pet --epochs 40 --batch-size 32
+python -m app.train_seresnet34 --data-dir data/oxford_iiit_pet --epochs 40 --batch-size 32
 ```
 
-可选高频参数：
+默认输出：
 
-- `--lr`：初始学习率（默认 `3e-4`）
-- `--weight-decay`：权重衰减（默认 `1e-4`）
-- `--label-smoothing`：标签平滑（默认 `0.1`）
-- `--workers`：DataLoader 线程数（默认 `4`）
-- `--seed`：随机种子（默认 `42`）
-- `--no-download`：已下载数据时关闭自动下载
+- `artifacts/seresnet34.pth`
+- `artifacts/seresnet34_history.json`
 
-训练后输出：
+### 2.2 训练 ResNet34（无注意力）
 
-- `artifacts/breednet.pth`（权重）
-- `artifacts/breednet.json`（训练信息）
+```bash
+python -m app.train_resnet34 --data-dir data/oxford_iiit_pet --epochs 40 --batch-size 32
+```
 
-## 3. 启动服务
+默认输出：
+
+- `artifacts/resnet34_plain.pth`
+- `artifacts/resnet34_plain_history.json`
+
+## 3. 绘制训练对比图 + 官方 test 指标
+
+```bash
+python -m app.compare_models --data-dir data/oxford_iiit_pet
+```
+
+输出：
+
+- `artifacts/compare_train_loss.png`（两个网络 train loss 对比）
+- `artifacts/compare_val_acc.png`（两个网络 val acc 对比）
+- `artifacts/compare_test_topk.png`（官方 test 上 top1/top3 柱状图）
+- `artifacts/compare_report.json`（top1/top3 数值）
+
+## 4. 启动服务
 
 ```bash
 python -m app.main
