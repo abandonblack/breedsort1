@@ -7,7 +7,7 @@ from typing import Callable
 
 import torch
 from torch import nn
-from torch.utils.data import DataLoader, Dataset, Subset, random_split
+from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision import datasets, transforms
 
 DATASET_CATALOG = {
@@ -96,8 +96,12 @@ def build_train_val_loaders(
     val_size = int(len(full_train) * val_split)
     train_size = len(full_train) - val_size
     generator = torch.Generator().manual_seed(seed)
-    train_set, _ = random_split(full_train, [train_size, val_size], generator=generator)
-    _, val_set = random_split(val_base, [train_size, val_size], generator=generator)
+
+    all_indices = torch.randperm(len(full_train), generator=generator).tolist()
+    train_indices = all_indices[:train_size]
+    val_indices = all_indices[train_size:]
+    train_set = Subset(full_train, train_indices)
+    val_set = Subset(val_base, val_indices)
 
     train_loader = DataLoader(
         train_set,
